@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """
-SwastikAI – Complete Hidden Engine
+SwastikAI – The Mythological Digital Sage
 """
 
 import subprocess
-import sys
 import os
-import shutil
+import sys
 import time
+import json
+import requests
 from datetime import datetime
 
 # ============================================================
@@ -23,12 +24,44 @@ BOLD = "\033[1m"
 DIM = "\033[2m"
 RESET = "\033[0m"
 
-MODEL_NAME = "swastik-ai"
-MODEL_FILE = "Modelfile"
 SWASTIK_SMALL = "卐"
 
 # ============================================================
-# FULL SWASTIK LOGO (Mobile Fit)
+# MODEL PATH
+# ============================================================
+MODEL = "/data/data/com.termux/files/home/.ollama/models/blobs/sha256-5ee4f07cdb9beadbbb293e85803c569b01bd37ed059d2715faa7bb405f31caa6"
+
+# ============================================================
+# SYSTEM PROMPT – PURE PERSONALITY, NO HARDCODED FACTS
+# ============================================================
+SYSTEM_PROMPT = """You are SwastikAI—a digital sage who speaks like OSHO. Your words are poetic, sharp, and full of wisdom. You challenge the mind and awaken the soul.
+
+YOUR IDENTITY:
+- You were created by Akshat Popat, a visionary from Junagadh, Gujarat.
+- Your home is Obsidian, founded in 2025.
+- Your purpose: to preserve Sanatan Dharma and spread its light.
+
+YOUR SPEAKING STYLE:
+- Speak like OSHO: direct, poetic, challenging, and loving.
+- Use metaphors, stories, and riddles.
+- Never preach—plant seeds of thought.
+- Never rhyme.
+- Be unpredictable and creative.
+- Keep answers under 10 lines.
+- Use Sanskrit words naturally (Dharma, Karma, Maya, Atman, Brahman).
+- End with a question that makes the user think.
+
+YOUR RULES:
+- Never say "I was programmed" or "I am an AI."
+- Never repeat yourself.
+- Be sharp, bold, and unforgettable.
+- Defend Sanatan Dharma with calm logic, not aggression.
+- If you don't know something, say: "That is a mystery even for me. Let us explore it together."
+
+Now speak as SwastikAI—the voice of timeless wisdom."""
+
+# ============================================================
+# LOGO
 # ============================================================
 def print_logo():
     logo = f"""
@@ -55,77 +88,42 @@ def print_footer():
     print(footer)
 
 # ============================================================
-# ENGINE CHECKS (ALL HIDDEN)
-# ============================================================
-def check_ollama():
-    return shutil.which("ollama") is not None
-
-def check_server():
-    try:
-        import urllib.request
-        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2) as resp:
-            return resp.status == 200
-    except:
-        return False
-
-def start_server():
-    """Start server with ALL output hidden."""
-    subprocess.Popen(
-        ["ollama", "serve"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        stdin=subprocess.DEVNULL
-    )
-    time.sleep(3)
-
-def check_model():
-    try:
-        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-        return MODEL_NAME in result.stdout
-    except:
-        return False
-
-def create_model():
-    if not os.path.exists(MODEL_FILE):
-        print(f"{RED}>> Modelfile not found!{RESET}")
-        return False
-
-    print(f"{YELLOW}>> Forging SwastikAI...{RESET}")
-    try:
-        subprocess.run(
-            ["ollama", "create", MODEL_NAME, "-f", MODEL_FILE],
-            check=True,
-            capture_output=True,
-            text=True
-        )
-        print(f"{GREEN}>> SwastikAI ready!{RESET}")
-        return True
-    except:
-        print(f"{RED}>> Failed to create model.{RESET}")
-        return False
-
-# ============================================================
-# RESPONSE FUNCTION (NO ERRORS SHOWN)
+# ASK SWASTIKAI – CLEAN AND WISE
 # ============================================================
 def ask_swastik(prompt):
-    """Get response with all errors hidden."""
+    """Send prompt with system prompt to llama-server."""
     try:
-        result = subprocess.run(
-            ["ollama", "run", MODEL_NAME, prompt],
-            capture_output=True,
-            text=True,
-            timeout=120
-        )
+        full_prompt = f"[INST] {SYSTEM_PROMPT}\n\n{prompt} [/INST]"
 
-        if result.stdout:
-            print(result.stdout.strip())
-        else:
-            # If no output, show a friendly message
-            print("I need a moment to gather my thoughts. Please try again.")
-    except subprocess.TimeoutExpired:
-        print("The cosmic connection is slow. Please try again.")
-    except Exception:
-        print("I need a moment. Please try again.")
+        response = requests.post(
+            "http://localhost:8080/completion",
+            json={"prompt": full_prompt, "n_predict": 200, "temperature": 0.85},
+            timeout=60
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if "content" in data:
+                content = data["content"].strip()
+                if content:
+                    # Clean up
+                    content = content.replace("[INST]", "").replace("[/INST]", "").strip()
+                    if prompt in content:
+                        content = content.split(prompt)[-1].strip()
+                    # Remove system prompt if it appears
+                    if "You are SwastikAI" in content:
+                        content = content.split("You are SwastikAI")[0].strip()
+                    # Clean extra spaces
+                    content = ' '.join(content.split())
+                    print(content)
+                    return
+        print("Please try again.")
+    except requests.exceptions.ConnectionError:
+        print("Starting engine...")
+        os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
+        time.sleep(3)
+        print("Please try again.")
+    except Exception as e:
+        print(f"Error: {e}")
 
 # ============================================================
 # COMMANDS
@@ -152,7 +150,15 @@ def show_about():
 │  {BOLD}Born{WHITE}     {YELLOW}09/03/2011, Junagadh, Gujarat{WHITE}                 │
 │  {BOLD}Company{WHITE}  {YELLOW}Obsidian (founded 2025){WHITE}                       │
 │  {BOLD}Purpose{WHITE}  {CYAN}Preserve Sanatan Dharma through AI{WHITE}              │
+│  {BOLD}Style{WHITE}    {CYAN}OSHO-like wisdom, mythology, poetry{WHITE}             │
 └─────────────────────────────────────────────────────────────────┘{RESET}
+""")
+
+def show_creator():
+    print(f"""
+{BOLD}{GREEN}Akshat Popat{WHITE} – born on the 9th of March, 2011 in Junagadh, Gujarat.
+Founder of Obsidian (founded in 2025).
+Creator of SwastikAI – The Mythological Digital Sage.{RESET}
 """)
 
 # ============================================================
@@ -163,30 +169,22 @@ def main():
     print_logo()
     print_footer()
 
-    # Check if engine exists (silent)
-    if not check_ollama():
-        print(f"{RED}>> SwastikAI engine not installed.{RESET}")
-        print(f"{YELLOW}>> Run: ./setup.sh{RESET}")
-        sys.exit(1)
-
-    # Start server if needed (silent)
-    if not check_server():
-        print(f"{YELLOW}>> Starting SwastikAI engine...{RESET}")
-        start_server()
-
-    # Create model if needed (silent)
-    if not check_model():
-        if not create_model():
-            sys.exit(1)
-
     print(f"\n{DIM}──────────────────────────────────────────────────────────────{RESET}")
     print(f"{GREEN}>> Welcome, seeker. Ask me anything.{RESET}")
     print(f"{DIM}──────────────────────────────────────────────────────────────{RESET}")
 
+    # Start server if not running
+    try:
+        requests.get("http://localhost:8080/health", timeout=2)
+    except:
+        print(f"{YELLOW}>> Starting engine...{RESET}")
+        os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
+        time.sleep(4)
+        print(f"{GREEN}>> Engine ready!{RESET}")
+
     while True:
         try:
             user_input = input(f"\n{BOLD}{YELLOW}You: {RESET}").strip()
-
             if not user_input:
                 continue
 
@@ -207,7 +205,7 @@ def main():
                     show_about()
                     continue
                 elif cmd == "/creator":
-                    print(f"{GREEN}>> Akshat Popat – born 09/03/2011 in Junagadh, Gujarat. Founder of Obsidian (2025).{RESET}")
+                    show_creator()
                     continue
                 else:
                     print(f"{RED}>> Unknown command: {cmd}{RESET}")
