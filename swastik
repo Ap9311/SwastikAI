@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-SwastikAI CLI – Professional ASCII Edition
+SwastikAI – Clean, Fast, Professional CLI
 """
 
 import subprocess
@@ -25,13 +25,12 @@ RESET = "\033[0m"
 
 MODEL_NAME = "swastik-ai"
 MODEL_FILE = "Modelfile"
-
-# ============================================================
-# ASCII SWASTIK SYMBOL
-# ============================================================
 SWASTIK_SMALL = "卐"
 
-def print_swastik_logo():
+# ============================================================
+# LOGO
+# ============================================================
+def print_logo():
     logo = f"""
 {BOLD}{CYAN}   ███████╗██╗    ██╗ █████╗ ███████╗████████╗██╗██╗  ██╗
    ██╔════╝██║    ██║██╔══██╗██╔════╝╚══██╔══╝██║██║ ██╔╝
@@ -51,14 +50,14 @@ def print_swastik_logo():
 def print_footer():
     footer = f"""
 {DIM}──────────────────────────────────────────────────────────────
-{BOLD}{CYAN}SwastikAI{RESET}{DIM}  |  {YELLOW}Type /help{RESET}{DIM}  |  {YELLOW}/exit{RESET}{DIM}  |  {BOLD}{GREEN}ACTIVE{RESET}{DIM}  |  {datetime.now().strftime('%H:%M')}{RESET}
+{BOLD}{CYAN}SwastikAI{RESET}{DIM}  |  {YELLOW}/help{RESET}{DIM}  |  {YELLOW}/exit{RESET}{DIM}  |  {BOLD}{GREEN}ACTIVE{RESET}{DIM}  |  {datetime.now().strftime('%H:%M')}{RESET}
 """
     print(footer)
 
 # ============================================================
-# ENGINE FUNCTIONS
+# ENGINE CHECKS
 # ============================================================
-def check_engine():
+def check_ollama():
     return shutil.which("ollama") is not None
 
 def check_server():
@@ -69,26 +68,14 @@ def check_server():
     except:
         return False
 
-def start_engine():
-    print(f"{YELLOW}>> Starting SwastikAI engine...{RESET}")
-    subprocess.run(["pkill", "-f", "ollama serve"], capture_output=True)
-    time.sleep(1)
-
+def start_server():
     subprocess.Popen(
         ["ollama", "serve"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         stdin=subprocess.DEVNULL
     )
-
-    for _ in range(20):
-        if check_server():
-            print(f"{GREEN}>> Engine ready!{RESET}")
-            return True
-        time.sleep(0.5)
-
-    print(f"{RED}>> Failed to start engine.{RESET}")
-    return False
+    time.sleep(2)
 
 def check_model():
     try:
@@ -100,7 +87,7 @@ def check_model():
 def create_model():
     if not os.path.exists(MODEL_FILE):
         print(f"{RED}>> Modelfile not found!{RESET}")
-        sys.exit(1)
+        return False
 
     print(f"{YELLOW}>> Forging SwastikAI...{RESET}")
     try:
@@ -110,31 +97,32 @@ def create_model():
             capture_output=True,
             text=True
         )
-        print(f"{GREEN}>> SwastikAI forged!{RESET}")
-    except subprocess.CalledProcessError as e:
-        print(f"{RED}>> Failed: {e.stderr}{RESET}")
-        sys.exit(1)
+        print(f"{GREEN}>> SwastikAI ready!{RESET}")
+        return True
+    except:
+        print(f"{RED}>> Failed to create model.{RESET}")
+        return False
 
 # ============================================================
-# THE FIXED ask_swastik() FUNCTION
+# THE RESPONSE FUNCTION – INSTANT, NO LOADER
 # ============================================================
 def ask_swastik(prompt):
-    """Simple and reliable - uses ollama run directly."""
+    """Get response instantly – no loader, no delay."""
     try:
-        # Run ollama and capture output
         result = subprocess.run(
             ["ollama", "run", MODEL_NAME, prompt],
             capture_output=True,
             text=True,
             timeout=120
         )
-        # Print the output
+
         if result.stdout:
+            # Print response directly
             print(result.stdout.strip())
         elif result.stderr:
             print(f"{RED}>> Error: {result.stderr}{RESET}")
     except subprocess.TimeoutExpired:
-        print(f"{RED}>> Request timed out. Please try again.{RESET}")
+        print(f"{RED}>> Timeout. Please try again.{RESET}")
     except Exception as e:
         print(f"{RED}>> Error: {e}{RESET}")
 
@@ -142,7 +130,7 @@ def ask_swastik(prompt):
 # COMMANDS
 # ============================================================
 def show_help():
-    help_text = f"""
+    print(f"""
 {BOLD}{CYAN}┌─────────────────────────────────────────────────────────────┐
 │  {WHITE}COMMANDS{WHITE}                                                │
 ├─────────────────────────────────────────────────────────────────┤
@@ -151,17 +139,11 @@ def show_help():
 │  {GREEN}/clear{WHITE}       Clear the screen                              │
 │  {GREEN}/about{WHITE}       About SwastikAI                               │
 │  {GREEN}/creator{WHITE}     Who created SwastikAI                         │
-├─────────────────────────────────────────────────────────────────┤
-│  {YELLOW}Tips:{WHITE}                                                    │
-│  Just type your question and press Enter                         │
-│  SwastikAI speaks like OSHO – poetic and wise                   │
-│  Responses are under 15 lines                                    │
 └─────────────────────────────────────────────────────────────────┘{RESET}
-"""
-    print(help_text)
+""")
 
 def show_about():
-    about = f"""
+    print(f"""
 {BOLD}{CYAN}┌─────────────────────────────────────────────────────────────┐
 │  {WHITE}ABOUT SWASTIKAI{WHITE}                                         │
 ├─────────────────────────────────────────────────────────────────┤
@@ -169,31 +151,29 @@ def show_about():
 │  {BOLD}Born{WHITE}     {YELLOW}09/03/2011, Junagadh, Gujarat{WHITE}                 │
 │  {BOLD}Company{WHITE}  {YELLOW}Obsidian (founded 2025){WHITE}                       │
 │  {BOLD}Purpose{WHITE}  {CYAN}Preserve Sanatan Dharma through AI{WHITE}              │
-│  {BOLD}Style{WHITE}    {CYAN}OSHO-like wisdom, mythology, poetry{WHITE}             │
 └─────────────────────────────────────────────────────────────────┘{RESET}
-"""
-    print(about)
+""")
 
 # ============================================================
-# MAIN INTERACTIVE LOOP
+# MAIN LOOP
 # ============================================================
-def interactive_chat():
+def main():
     os.system('clear' if os.name == 'posix' else 'cls')
-    print_swastik_logo()
+    print_logo()
     print_footer()
 
-    if not check_engine():
-        print(f"{RED}>> SwastikAI engine not found!{RESET}")
-        print("  Run: ./setup.sh")
+    if not check_ollama():
+        print(f"{RED}>> SwastikAI engine not installed.{RESET}")
+        print(f"{YELLOW}>> Run: ./setup.sh{RESET}")
         sys.exit(1)
 
     if not check_server():
-        if not start_engine():
-            print(f"{RED}>> Could not start engine. Exiting.{RESET}")
-            sys.exit(1)
+        print(f"{YELLOW}>> Starting engine...{RESET}")
+        start_server()
 
     if not check_model():
-        create_model()
+        if not create_model():
+            sys.exit(1)
 
     print(f"\n{DIM}──────────────────────────────────────────────────────────────{RESET}")
     print(f"{GREEN}>> Welcome, seeker. Ask me anything.{RESET}")
@@ -201,7 +181,8 @@ def interactive_chat():
 
     while True:
         try:
-            user_input = input(f"\n{BOLD}{YELLOW}>>> {RESET}").strip()
+            # Show "You:" label
+            user_input = input(f"\n{BOLD}{YELLOW}You: {RESET}").strip()
 
             if not user_input:
                 continue
@@ -213,7 +194,7 @@ def interactive_chat():
                     break
                 elif cmd == "/clear":
                     os.system('clear' if os.name == 'posix' else 'cls')
-                    print_swastik_logo()
+                    print_logo()
                     print_footer()
                     continue
                 elif cmd == "/help":
@@ -229,9 +210,9 @@ def interactive_chat():
                     print(f"{RED}>> Unknown command: {cmd}{RESET}")
                     continue
 
-            print(f"{BOLD}{WHITE}{SWASTIK_SMALL} {RESET}", end="", flush=True)
+            # Show "SwastikAI:" label and response instantly
+            print(f"{BOLD}{CYAN}SwastikAI: {RESET}", end="", flush=True)
             ask_swastik(user_input)
-
             print(f"{DIM}──────────────────────────────────────────────────────────────{RESET}")
 
         except KeyboardInterrupt:
@@ -239,17 +220,6 @@ def interactive_chat():
             break
         except EOFError:
             break
-
-# ============================================================
-# ENTRY POINT
-# ============================================================
-def main():
-    if not check_engine():
-        print(f"{RED}>> SwastikAI engine not found!{RESET}")
-        print("  Run: ./setup.sh")
-        sys.exit(1)
-
-    interactive_chat()
 
 if __name__ == "__main__":
     main()
