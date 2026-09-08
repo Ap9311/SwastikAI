@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 SwastikAI CLI – Professional ASCII Edition
 """
@@ -36,7 +36,6 @@ MODEL_FILE = "Modelfile"
 SWASTIK_SMALL = "卐"
 
 def print_swastik_logo():
-    """Print the exact Swastik logo you requested."""
     logo = f"""
 {BOLD}{CYAN}   ███████╗██╗    ██╗ █████╗ ███████╗████████╗██╗██╗  ██╗
    ██╔════╝██║    ██║██╔══██╗██╔════╝╚══██╔══╝██║██║ ██╔╝
