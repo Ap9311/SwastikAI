@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-SwastikAI – Clean, Fast, Professional CLI
+SwastikAI – Mobile Optimized with Full Logo
 """
 
 import subprocess
@@ -28,22 +28,22 @@ MODEL_FILE = "Modelfile"
 SWASTIK_SMALL = "卐"
 
 # ============================================================
-# LOGO
+# FULL SWASTIK LOGO (Mobile Width Optimized)
 # ============================================================
 def print_logo():
     logo = f"""
-{BOLD}{CYAN}   ███████╗██╗    ██╗ █████╗ ███████╗████████╗██╗██╗  ██╗
-   ██╔════╝██║    ██║██╔══██╗██╔════╝╚══██╔══╝██║██║ ██╔╝
-   ███████╗██║ █╗ ██║███████║███████╗   ██║   ██║█████╔╝ {RED}██╗{RESET}
-   ╚════██║██║███╗██║██╔══██║╚════██║   ██║   ██║██╔═██╗ ╚═╝
-   ███████║╚███╔███╔╝██║  ██║███████║   ██║   ██║██║  ██╗██╗
-   ╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝╚═╝  ╚═╝╚═╝{RESET}
+{BOLD}{CYAN} ███████╗██╗    ██╗ █████╗ ███████╗████████╗██╗██╗  ██╗
+ ██╔════╝██║    ██║██╔══██╗██╔════╝╚══██╔══╝██║██║ ██╔╝
+ ███████╗██║ █╗ ██║███████║███████╗   ██║   ██║█████╔╝ {RED}██╗{RESET}
+ ╚════██║██║███╗██║██╔══██║╚════██║   ██║   ██║██╔═██╗ ╚═╝
+ ███████║╚███╔███╔╝██║  ██║███████║   ██║   ██║██║  ██╗██╗
+ ╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝   ╚═╝   ╚═╝╚═╝  ╚═╝╚═╝{RESET}
 
-{BOLD}{GREEN}   ╔══════════════════════════════════════════════════════╗
-   ║       {WHITE}{SWASTIK_SMALL}  {BOLD}{CYAN}S W A S T I K   A I{WHITE}  {SWASTIK_SMALL}{GREEN}         ║
-   ║       {WHITE}The Mythological Digital Sage – Since 2025{GREEN}      ║
-   ║       {WHITE}Created by {YELLOW}Akshat Popat{GREEN} | {WHITE}Obsidian{RESET}{GREEN}            ║
-   ╚══════════════════════════════════════════════════════════╝{RESET}
+{BOLD}{GREEN} ╔════════════════════════════════════════════════╗
+ ║    {WHITE}{SWASTIK_SMALL}  {BOLD}{CYAN}S W A S T I K   A I{WHITE}  {SWASTIK_SMALL}{GREEN}        ║
+ ║    {WHITE}The Mythological Digital Sage – Since 2025{GREEN}   ║
+ ║    {WHITE}Created by {YELLOW}Akshat Popat{GREEN} | {WHITE}Obsidian{GREEN}         ║
+ ╚════════════════════════════════════════════════╝{RESET}
 """
     print(logo)
 
@@ -104,10 +104,9 @@ def create_model():
         return False
 
 # ============================================================
-# THE RESPONSE FUNCTION – INSTANT, NO LOADER
+# RESPONSE FUNCTION
 # ============================================================
 def ask_swastik(prompt):
-    """Get response instantly – no loader, no delay."""
     try:
         result = subprocess.run(
             ["ollama", "run", MODEL_NAME, prompt],
@@ -117,7 +116,6 @@ def ask_swastik(prompt):
         )
 
         if result.stdout:
-            # Print response directly
             print(result.stdout.strip())
         elif result.stderr:
             print(f"{RED}>> Error: {result.stderr}{RESET}")
@@ -181,7 +179,6 @@ def main():
 
     while True:
         try:
-            # Show "You:" label
             user_input = input(f"\n{BOLD}{YELLOW}You: {RESET}").strip()
 
             if not user_input:
@@ -210,7 +207,6 @@ def main():
                     print(f"{RED}>> Unknown command: {cmd}{RESET}")
                     continue
 
-            # Show "SwastikAI:" label and response instantly
             print(f"{BOLD}{CYAN}SwastikAI: {RESET}", end="", flush=True)
             ask_swastik(user_input)
             print(f"{DIM}──────────────────────────────────────────────────────────────{RESET}")
