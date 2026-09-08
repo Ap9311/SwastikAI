@@ -7,9 +7,7 @@ import subprocess
 import sys
 import os
 import shutil
-import json
 import time
-import urllib.request
 from datetime import datetime
 
 # ============================================================
@@ -20,12 +18,10 @@ YELLOW = "\033[93m"
 CYAN = "\033[96m"
 RED = "\033[91m"
 BLUE = "\033[94m"
-MAGENTA = "\033[95m"
 WHITE = "\033[97m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
 RESET = "\033[0m"
-CLEAR = "\033[2J\033[H"
 
 MODEL_NAME = "swastik-ai"
 MODEL_FILE = "Modelfile"
@@ -60,19 +56,20 @@ def print_footer():
     print(footer)
 
 # ============================================================
-# OLLAMA FUNCTIONS
+# ENGINE FUNCTIONS
 # ============================================================
-def check_ollama():
+def check_engine():
     return shutil.which("ollama") is not None
 
 def check_server():
     try:
+        import urllib.request
         with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2) as resp:
             return resp.status == 200
     except:
         return False
 
-def start_server_silent():
+def start_engine():
     print(f"{YELLOW}>> Starting SwastikAI engine...{RESET}")
     subprocess.run(["pkill", "-f", "ollama serve"], capture_output=True)
     time.sleep(1)
@@ -95,9 +92,8 @@ def start_server_silent():
 
 def check_model():
     try:
-        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2) as resp:
-            data = json.loads(resp.read().decode())
-            return any(m["name"] == MODEL_NAME for m in data.get("models", []))
+        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
+        return MODEL_NAME in result.stdout
     except:
         return False
 
@@ -119,43 +115,26 @@ def create_model():
         print(f"{RED}>> Failed: {e.stderr}{RESET}")
         sys.exit(1)
 
+# ============================================================
+# THE FIXED ask_swastik() FUNCTION
+# ============================================================
 def ask_swastik(prompt):
+    """Simple and reliable - uses ollama run directly."""
     try:
-        payload = json.dumps({
-            "model": MODEL_NAME,
-            "prompt": prompt,
-            "stream": True
-        })
-
-        process = subprocess.Popen(
-            ["curl", "-s", "-X", "POST", "http://localhost:11434/api/generate",
-             "-H", "Content-Type: application/json",
-             "-d", payload],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+        # Run ollama and capture output
+        result = subprocess.run(
+            ["ollama", "run", MODEL_NAME, prompt],
+            capture_output=True,
             text=True,
-            bufsize=1
+            timeout=120
         )
-
-        buffer = ""
-        while True:
-            chunk = process.stdout.read(1)
-            if not chunk:
-                break
-            buffer += chunk
-            while "\n" in buffer:
-                line, buffer = buffer.split("\n", 1)
-                if line.strip():
-                    try:
-                        data = json.loads(line)
-                        if "response" in data:
-                            print(data["response"], end="", flush=True)
-                        if data.get("done", False):
-                            print()
-                            return
-                    except json.JSONDecodeError:
-                        pass
-        process.wait()
+        # Print the output
+        if result.stdout:
+            print(result.stdout.strip())
+        elif result.stderr:
+            print(f"{RED}>> Error: {result.stderr}{RESET}")
+    except subprocess.TimeoutExpired:
+        print(f"{RED}>> Request timed out. Please try again.{RESET}")
     except Exception as e:
         print(f"{RED}>> Error: {e}{RESET}")
 
@@ -203,8 +182,13 @@ def interactive_chat():
     print_swastik_logo()
     print_footer()
 
+    if not check_engine():
+        print(f"{RED}>> SwastikAI engine not found!{RESET}")
+        print("  Run: ./setup.sh")
+        sys.exit(1)
+
     if not check_server():
-        if not start_server_silent():
+        if not start_engine():
             print(f"{RED}>> Could not start engine. Exiting.{RESET}")
             sys.exit(1)
 
@@ -260,9 +244,9 @@ def interactive_chat():
 # ENTRY POINT
 # ============================================================
 def main():
-    if not check_ollama():
-        print(f"{RED}>> Ollama not installed!{RESET}")
-        print("  Run: curl -fsSL https://ollama.com/install.sh | sh")
+    if not check_engine():
+        print(f"{RED}>> SwastikAI engine not found!{RESET}")
+        print("  Run: ./setup.sh")
         sys.exit(1)
 
     interactive_chat()

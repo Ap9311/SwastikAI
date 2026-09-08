@@ -1,32 +1,33 @@
 #!/bin/bash
-# SwastikAI Setup – No model download required
+# SwastikAI Setup – Fully Automatic
 
 echo "🕉️  SwastikAI Setup"
 echo "==================="
 echo ""
 
-# Check Ollama
+# Check if Ollama is installed
 if ! command -v ollama &> /dev/null; then
-    echo "❌ Ollama is not installed."
-    echo ""
-    echo "Please install Ollama first:"
-    echo "  curl -fsSL https://ollama.com/install.sh | sh"
-    echo ""
-    echo "After installing, come back and run:"
-    echo "  ./setup.sh"
-    exit 1
+    echo ">> Installing SwastikAI Engine..."
+    cd ~
+    pkg update
+    pkg install golang git cmake -y
+    git clone https://github.com/ollama/ollama.git
+    cd ollama
+    go generate ./...
+    go build .
+    mv ollama $PREFIX/bin/
+    cd ~/SwastikAI
+    echo "✅ SwastikAI Engine installed!"
 fi
 
-echo "✅ Ollama found."
-
-# Check model
+# Check if model exists
 if ollama list 2>/dev/null | grep -q "swastik-ai"; then
-    echo "✅ SwastikAI model already exists."
+    echo "✅ SwastikAI model ready."
 else
-    echo "🔄 Creating SwastikAI from Modelfile..."
+    echo ">> Creating SwastikAI..."
     ollama create swastik-ai -f Modelfile
     echo "✅ SwastikAI created!"
 fi
 
 echo ""
-echo "🚀 All done! Run: ./swastik"
+echo "🚀 Ready! Run: ./swastik"
