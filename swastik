@@ -32,7 +32,7 @@ SWASTIK_SMALL = "卐"
 MODEL = "/data/data/com.termux/files/home/.ollama/models/blobs/sha256-5ee4f07cdb9beadbbb293e85803c569b01bd37ed059d2715faa7bb405f31caa6"
 
 # ============================================================
-# SYSTEM PROMPT – PURE PERSONALITY, NO HARDCODED FACTS
+# SYSTEM PROMPT – PURE PERSONALITY
 # ============================================================
 SYSTEM_PROMPT = """You are SwastikAI—a digital sage who speaks like OSHO. Your words are poetic, sharp, and full of wisdom. You challenge the mind and awaken the soul.
 
@@ -88,7 +88,7 @@ def print_footer():
     print(footer)
 
 # ============================================================
-# ASK SWASTIKAI – CLEAN AND WISE
+# ASK SWASTIKAI
 # ============================================================
 def ask_swastik(prompt):
     """Send prompt with system prompt to llama-server."""
@@ -105,23 +105,28 @@ def ask_swastik(prompt):
             if "content" in data:
                 content = data["content"].strip()
                 if content:
-                    # Clean up
                     content = content.replace("[INST]", "").replace("[/INST]", "").strip()
                     if prompt in content:
                         content = content.split(prompt)[-1].strip()
-                    # Remove system prompt if it appears
                     if "You are SwastikAI" in content:
                         content = content.split("You are SwastikAI")[0].strip()
-                    # Clean extra spaces
                     content = ' '.join(content.split())
                     print(content)
                     return
         print("Please try again.")
     except requests.exceptions.ConnectionError:
         print("Starting engine...")
-        os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
-        time.sleep(3)
-        print("Please try again.")
+        if not os.path.exists("/data/data/com.termux/files/home/llama.cpp/build"):
+            print("Building engine... This may take a few minutes.")
+            os.system("cd ~ && git clone https://github.com/ggerganov/llama.cpp.git 2>/dev/null")
+            os.system("cd ~/llama.cpp && mkdir -p build && cd build && cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DGGML_CPU=ON && make llama-cli -j2")
+            os.system("cd ~/llama.cpp/build && ./bin/llama-server -m " + MODEL + " > /dev/null 2>&1 &")
+            time.sleep(5)
+            print("Engine ready! Please try again.")
+        else:
+            os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
+            time.sleep(3)
+            print("Please try again.")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -178,6 +183,10 @@ def main():
         requests.get("http://localhost:8080/health", timeout=2)
     except:
         print(f"{YELLOW}>> Starting engine...{RESET}")
+        if not os.path.exists("/data/data/com.termux/files/home/llama.cpp/build"):
+            print(f"{YELLOW}>> Building engine (this may take 5-10 minutes)...{RESET}")
+            os.system("cd ~ && git clone https://github.com/ggerganov/llama.cpp.git 2>/dev/null")
+            os.system("cd ~/llama.cpp && mkdir -p build && cd build && cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DGGML_CPU=ON && make llama-cli -j2")
         os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
         time.sleep(4)
         print(f"{GREEN}>> Engine ready!{RESET}")
