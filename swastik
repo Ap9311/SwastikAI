@@ -116,15 +116,17 @@ def ask_swastik(prompt):
         print("Please try again.")
     except requests.exceptions.ConnectionError:
         print("Starting engine...")
-        if not os.path.exists("/data/data/com.termux/files/home/llama.cpp/build/bin/llama-server"):
-            print("Downloading engine...")
-            os.system("mkdir -p ~/llama.cpp/build/bin")
-            os.system("curl -L -o ~/llama.cpp/build/bin/llama-server https://github.com/ggerganov/llama.cpp/releases/download/b4584/llama-server")
-            os.system("chmod +x ~/llama.cpp/build/bin/llama-server")
-            print("Engine downloaded!")
-        os.system(f"cd ~/llama.cpp/build/bin && ./llama-server -m {MODEL} > /dev/null 2>&1 &")
-        time.sleep(3)
-        print("Please try again.")
+        if not os.path.exists("/data/data/com.termux/files/home/llama.cpp/build"):
+            print("Building engine... This may take a few minutes.")
+            os.system("cd ~ && git clone https://github.com/ggerganov/llama.cpp.git 2>/dev/null")
+            os.system("cd ~/llama.cpp && mkdir -p build && cd build && cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DGGML_CPU=ON && make llama-cli -j2")
+            os.system("cd ~/llama.cpp/build && ./bin/llama-server -m " + MODEL + " > /dev/null 2>&1 &")
+            time.sleep(5)
+            print("Engine ready! Please try again.")
+        else:
+            os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
+            time.sleep(3)
+            print("Please try again.")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -176,21 +178,17 @@ def main():
     print(f"{GREEN}>> Welcome, seeker. Ask me anything.{RESET}")
     print(f"{DIM}──────────────────────────────────────────────────────────────{RESET}")
 
-    # Check if llama-server exists, if not download pre-built binary
-    if not os.path.exists("/data/data/com.termux/files/home/llama.cpp/build/bin/llama-server"):
-        print(f"{YELLOW}>> Downloading engine...{RESET}")
-        os.system("mkdir -p ~/llama.cpp/build/bin")
-        os.system("curl -L -o ~/llama.cpp/build/bin/llama-server https://github.com/ggerganov/llama.cpp/releases/download/b4584/llama-server")
-        os.system("chmod +x ~/llama.cpp/build/bin/llama-server")
-        print(f"{GREEN}>> Engine downloaded!{RESET}")
-
     # Start server if not running
     try:
         requests.get("http://localhost:8080/health", timeout=2)
     except:
         print(f"{YELLOW}>> Starting engine...{RESET}")
-        os.system(f"cd ~/llama.cpp/build/bin && ./llama-server -m {MODEL} > /dev/null 2>&1 &")
-        time.sleep(3)
+        if not os.path.exists("/data/data/com.termux/files/home/llama.cpp/build"):
+            print(f"{YELLOW}>> Building engine (this may take 5-10 minutes)...{RESET}")
+            os.system("cd ~ && git clone https://github.com/ggerganov/llama.cpp.git 2>/dev/null")
+            os.system("cd ~/llama.cpp && mkdir -p build && cd build && cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DGGML_CPU=ON && make llama-cli -j2")
+        os.system(f"cd ~/llama.cpp/build && ./bin/llama-server -m {MODEL} > /dev/null 2>&1 &")
+        time.sleep(4)
         print(f"{GREEN}>> Engine ready!{RESET}")
 
     while True:

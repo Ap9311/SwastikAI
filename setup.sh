@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwastikAI – Fast Setup (Pre-built Binary)
+# SwastikAI – Simple Setup
 
 echo "🕉️  Setting up SwastikAI..."
 echo ""
@@ -9,25 +9,15 @@ if ! command -v python &> /dev/null; then
     pkg install python -y > /dev/null 2>&1
 fi
 
-# Install pip if missing
-if ! command -v pip &> /dev/null; then
-    pkg install python-pip -y > /dev/null 2>&1
+# Check if Ollama is installed
+if ! command -v ollama &> /dev/null; then
+    echo ">> Installing Ollama..."
+    pkg install ollama -y
 fi
 
-# Install Python dependencies
-echo ">> Installing dependencies..."
-pip install requests > /dev/null 2>&1
-
-# Create directory for llama-server
-mkdir -p ~/llama.cpp/build/bin
-
-# Download pre-built llama-server
-if [ ! -f ~/llama.cpp/build/bin/llama-server ]; then
-    echo ">> Downloading SwastikAI engine..."
-    curl -L -o ~/llama.cpp/build/bin/llama-server https://github.com/ggerganov/llama.cpp/releases/download/b4584/llama-server
-    chmod +x ~/llama.cpp/build/bin/llama-server
-    echo "✅ Engine downloaded!"
-fi
+# Create SwastikAI model
+echo ">> Creating SwastikAI model..."
+ollama create swastik-ai -f Modelfile
 
 echo ""
 echo "✅ SwastikAI is ready!"
